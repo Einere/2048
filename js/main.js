@@ -1,32 +1,41 @@
 const fxjs = window._;
 const {go, range, forEach, map, zipWithIndexL, filter, flat} = fxjs;
 const table = document.getElementById('table');
-const tableData = [];
+let tableData = [];
 const dimension = 4;
+
+function getDefaultTableData() {
+  return go(
+    range(dimension),
+    map(_ => {
+      const row = new Array(dimension);
+      row.fill(0);
+      return row;
+    })
+  );
+}
 
 function init() {
   const fragment = document.createDocumentFragment();
+  tableData = getDefaultTableData();
 
   go(
-    range(dimension),
-    forEach(() => {
+    tableData,
+    forEach((row) => {
       const tr = document.createElement('tr');
-      const rowData = [];
 
       go(
-        range(dimension),
-        forEach(() => {
-          const cellData = 0;
-          rowData.push(cellData);
+        row,
+        forEach((cell) => {
           const td = document.createElement('td');
           tr.appendChild(td);
         })
-      )
+      );
 
-      tableData.push(rowData);
       fragment.appendChild(tr);
     })
-  )
+  );
+
   table.appendChild(fragment);
 }
 
@@ -66,7 +75,6 @@ function render() {
     })
   );
 }
-
 
 init();
 render();
@@ -151,8 +159,45 @@ window.addEventListener('mouseup', (e) => {
 
   if(isMouseMoved) {
     const direction = getDirection(startCoordinate, endCoordinate);
-
     console.log(direction);
+
+    switch(direction) {
+      case Direction.LEFT: {
+        break;
+      }
+      case Direction.RIGHT: {
+        break;
+      }
+      case Direction.UP: {
+        const shiftedColumns = [
+          [], [], [], []
+        ];
+
+        tableData.forEach((row, i) => {
+          row.forEach((cellData, j) => {
+            if(cellData) {
+              shiftedColumns[j].push(cellData);
+            }
+          });
+        });
+
+        tableData = getDefaultTableData();
+
+        shiftedColumns.forEach((column, j) => {
+          column.forEach((cellData, i) => {
+            tableData[i][j] = cellData;
+          });
+        });
+
+        break;
+      }
+      case Direction.DOWN: {
+        break;
+      }
+    }
+
+    render();
+    randomGenerate();
   }
 
   isMouseClicked = false;
