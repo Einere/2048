@@ -99,9 +99,49 @@ window.addEventListener('mouseup', (e) => {
 
     switch(direction) {
       case Direction.LEFT: {
+        const shiftedRows = [
+          [], [], [], []
+        ];
+
+        tableData.forEach((row, i) => {
+          row.forEach((cell, j) => {
+            if(cell.number > 0) {
+              shiftedRows[i].push(cell);
+            }
+          });
+        });
+
+        tableData = getDefaultTableData(dimension);
+
+        shiftedRows.forEach((column, i) => {
+          column.forEach((cell, j) => {
+            tableData[i][j] = cell;
+          });
+        });
+
         break;
       }
       case Direction.RIGHT: {
+        const shiftedRows = [
+          [], [], [], []
+        ];
+
+        tableData.forEach((row, i) => {
+          row.forEach((cell, j) => {
+            if(cell.number > 0) {
+              shiftedRows[i].push(cell);
+            }
+          });
+        });
+
+        tableData = getDefaultTableData(dimension);
+
+        shiftedRows.forEach((column, i) => {
+          column.forEach((cell, j) => {
+            tableData[i][dimension - 1 - j] = cell;
+          });
+        });
+
         break;
       }
       case Direction.UP: {
@@ -147,6 +187,7 @@ window.addEventListener('mouseup', (e) => {
             tableData[dimension - 1 - i][j] = cellData;
           });
         });
+
         break;
       }
     }
