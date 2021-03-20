@@ -1,84 +1,20 @@
-const fxjs = window._;
-const {go, range, forEach, map, zipWithIndexL, filter, flat} = fxjs;
+const {init, randomGenerate, render, getDefaultTableData} = window.utils;
+
 const table = document.getElementById('table');
 let tableData = [];
 const dimension = 4;
 
-function getDefaultTableData() {
-  return go(
-    range(dimension),
-    map(_ => {
-      const row = new Array(dimension);
-      row.fill(0);
-      return row;
-    })
-  );
-}
-
-function init() {
-  const fragment = document.createDocumentFragment();
-  tableData = getDefaultTableData();
-
-  go(
-    tableData,
-    forEach((row) => {
-      const tr = document.createElement('tr');
-
-      go(
-        row,
-        forEach((cell) => {
-          const td = document.createElement('td');
-          tr.appendChild(td);
-        })
-      );
-
-      fragment.appendChild(tr);
-    })
-  );
-
-  table.appendChild(fragment);
-}
-
-function randomGenerate() {
-  const filteredIndexedData = go(
-    tableData,
-    zipWithIndexL,
-    map(([i, row]) => go(
-      tableData[i],
-      zipWithIndexL,
-      map(([j, column]) => [i, j, column])
-    )),
-    flat,
-    filter(indexedData => indexedData[2] === 0)
-  );
-
-  const randomIndex = Math.floor(Math.random() * filteredIndexedData.length);
-  const [i, j] = filteredIndexedData[randomIndex];
-  tableData[i][j] = 2;
-
-  render();
-}
-
-function render() {
-  go(
-    tableData,
-    zipWithIndexL,
-    forEach(([i, row]) => {
-      go(
-        tableData[i],
-        zipWithIndexL,
-        forEach(([j, column]) => {
-          table.children[i].children[j].textContent = column === 0 ? '' : column;
-          // table.children[i].children[j].textContent = column;
-        })
-      )
-    })
-  );
-}
-
-init();
-render();
-randomGenerate();
+tableData = init({
+  table,
+  dimension,
+});
+randomGenerate({
+  tableData,
+});
+render({
+  tableData,
+  table,
+});
 
 // 드래그 방향을 계산
 // 인강에서는 delta 값의 양음 여부와 기울기로 판단.
@@ -181,7 +117,7 @@ window.addEventListener('mouseup', (e) => {
           });
         });
 
-        tableData = getDefaultTableData();
+        tableData = getDefaultTableData(dimension);
 
         shiftedColumns.forEach((column, j) => {
           column.forEach((cellData, i) => {
@@ -192,12 +128,36 @@ window.addEventListener('mouseup', (e) => {
         break;
       }
       case Direction.DOWN: {
+        const shiftedColumns = [
+          [], [], [], []
+        ];
+
+        tableData.forEach((row, i) => {
+          row.forEach((cellData, j) => {
+            if(cellData) {
+              shiftedColumns[j].push(cellData);
+            }
+          });
+        });
+
+        tableData = getDefaultTableData(dimension);
+
+        shiftedColumns.forEach((column, j) => {
+          column.forEach((cellData, i) => {
+            tableData[dimension - 1 - i][j] = cellData;
+          });
+        });
         break;
       }
     }
 
-    render();
-    randomGenerate();
+    randomGenerate({
+      tableData,
+    });
+    render({
+      tableData,
+      table,
+    });
   }
 
   isMouseClicked = false;
