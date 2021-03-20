@@ -110,9 +110,9 @@ window.addEventListener('mouseup', (e) => {
         ];
 
         tableData.forEach((row, i) => {
-          row.forEach((cellData, j) => {
-            if(cellData) {
-              shiftedColumns[j].push(cellData);
+          row.forEach((cell, j) => {
+            if(cell.number > 0) {
+              shiftedColumns[j].push(cell);
             }
           });
         });
@@ -120,8 +120,8 @@ window.addEventListener('mouseup', (e) => {
         tableData = getDefaultTableData(dimension);
 
         shiftedColumns.forEach((column, j) => {
-          column.forEach((cellData, i) => {
-            tableData[i][j] = cellData;
+          column.forEach((cell, i) => {
+            tableData[i][j] = cell;
           });
         });
 
@@ -133,9 +133,9 @@ window.addEventListener('mouseup', (e) => {
         ];
 
         tableData.forEach((row, i) => {
-          row.forEach((cellData, j) => {
-            if(cellData) {
-              shiftedColumns[j].push(cellData);
+          row.forEach((cell, j) => {
+            if(cell.number > 0) {
+              shiftedColumns[j].push(cell);
             }
           });
         });

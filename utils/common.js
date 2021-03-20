@@ -1,3 +1,4 @@
+const Cell = window.Cell;
 const fxjs = window._;
 const {go, range, forEach, map, zipWithIndexL, filter, flat} = fxjs;
 
@@ -6,7 +7,7 @@ function getDefaultTableData(dimension) {
     range(dimension),
     map(_ => {
       const row = new Array(dimension);
-      row.fill(0);
+      row.fill(new Cell({}));
 
       return row;
     })
@@ -46,15 +47,15 @@ function randomGenerate({tableData}) {
     map(([i, row]) => go(
       tableData[i],
       zipWithIndexL,
-      map(([j, column]) => [i, j, column])
+      map(([j, cell]) => [i, j, cell])
     )),
     flat,
-    filter(indexedData => indexedData[2] === 0)
+    filter(indexedData => indexedData[2].number === 0)
   );
 
   const randomIndex = Math.floor(Math.random() * filteredIndexedData.length);
   const [i, j] = filteredIndexedData[randomIndex];
-  tableData[i][j] = 2;
+  tableData[i][j] = new Cell({number: 2, isNew: true});
 }
 
 function render({tableData, table}) {
@@ -66,7 +67,15 @@ function render({tableData, table}) {
         tableData[i],
         zipWithIndexL,
         forEach(([j, cell]) => {
-          table.children[i].children[j].textContent = cell === 0 ? '' : cell;
+          const tr = table.children[i].children[j];
+          tr.textContent = cell.number === 0 ? '' : cell.number;
+          if(cell.isNew) {
+            tr.style.color = 'tomato';
+            cell.isNew = false;
+          }
+          else {
+            tr.style.color = 'black';
+          }
         })
       )
     })
