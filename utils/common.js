@@ -25,10 +25,6 @@ function init({ table, dimension }) {
   const fragment = document.createDocumentFragment();
   const tableData = getDefaultTableData(dimension);
 
-  tableData[0][0] = new Cell({ number: 2 });
-  tableData[0][2] = new Cell({ number: 2 });
-  tableData[0][3] = new Cell({ number: 4 });
-
   go(
     tableData,
     forEach((row) => {
@@ -67,15 +63,17 @@ function randomGenerate({ tableData }) {
   );
 
   if (filteredIndexedData.length === 0) {
-    return;
+    return true;
   }
 
   const randomIndex = Math.floor(Math.random() * filteredIndexedData.length);
   const [i, j] = filteredIndexedData[randomIndex];
   tableData[i][j] = new Cell({ number: 2, isNew: true });
+
+  return false;
 }
 
-function render({ tableData, table }) {
+function render({ tableData, table, scoreRef, score }) {
   go(
     tableData,
     zipWithIndexL,
@@ -100,6 +98,8 @@ function render({ tableData, table }) {
       );
     })
   );
+
+  scoreRef.textContent = score.toString();
 }
 
 function getTheta(deltaX, deltaY) {

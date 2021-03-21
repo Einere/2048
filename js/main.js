@@ -10,6 +10,8 @@ const {
 const table = document.getElementById("table");
 let tableData = [];
 const dimension = 4;
+const scoreRef = document.getElementById("score");
+let score = 0;
 
 tableData = init({
   table,
@@ -21,6 +23,8 @@ randomGenerate({
 render({
   tableData,
   table,
+  scoreRef,
+  score,
 });
 
 // 드래그 방향을 계산
@@ -30,19 +34,19 @@ let isMouseMoved = false;
 let startCoordinate = null;
 let endCoordinate = null;
 
-window.addEventListener("mousedown", (e) => {
+function mouseDownHandler(e) {
   isMouseClicked = true;
   startCoordinate = [e.clientX, e.clientY];
-});
+}
 
-window.addEventListener("mousemove", (e) => {
+function mouseMoveHandler(e) {
   if (!isMouseClicked) {
     isMouseMoved = true;
     return;
   }
-});
+}
 
-window.addEventListener("mouseup", (e) => {
+function mouseUpHandler(e) {
   endCoordinate = [e.clientX, e.clientY];
 
   if (isMouseMoved) {
@@ -191,21 +195,38 @@ window.addEventListener("mouseup", (e) => {
             tableData[dimension - 1 - i][j] = cellData;
           });
         });
-        console.log(tableData);
 
         break;
       }
     }
 
-    randomGenerate({
+    const isEnd = randomGenerate({
       tableData,
     });
+
+    if (isEnd) {
+      window.removeEventListener("mousedown", mouseDownHandler);
+      window.removeEventListener("mousemove", mouseMoveHandler);
+      window.removeEventListener("mouseup", mouseUpHandler);
+      return;
+    }
+
+    score += 1;
+
     render({
       tableData,
       table,
+      scoreRef,
+      score,
     });
   }
 
   isMouseClicked = false;
   isMouseMoved = false;
-});
+}
+
+window.addEventListener("mousedown", mouseDownHandler);
+
+window.addEventListener("mousemove", mouseMoveHandler);
+
+window.addEventListener("mouseup", mouseUpHandler);
