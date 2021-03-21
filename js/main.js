@@ -106,7 +106,16 @@ window.addEventListener('mouseup', (e) => {
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
-              shiftedRows[i].push(cell);
+              const shiftedRow = shiftedRows[i];
+              const shiftedLastCell = shiftedRow[shiftedRow.length - 1];
+              const isCanMerge = shiftedLastCell instanceof Cell && shiftedLastCell.number === cell.number;
+
+              if(isCanMerge) {
+                shiftedLastCell.number *= 2;
+              }
+              else {
+                shiftedRow.push(cell);
+              }
             }
           });
         });
@@ -129,7 +138,16 @@ window.addEventListener('mouseup', (e) => {
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
-              shiftedRows[i].push(cell);
+              const shiftedRow = shiftedRows[i];
+              const shiftedLastCell = shiftedRow[shiftedRow.length - 1];
+              const isCanMerge = shiftedLastCell instanceof Cell && shiftedLastCell.number === cell.number;
+
+              if(isCanMerge) {
+                shiftedLastCell.number *= 2;
+              }
+              else {
+                shiftedRow.unshift(cell);
+              }
             }
           });
         });
