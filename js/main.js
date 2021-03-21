@@ -1,6 +1,13 @@
-const {Direction, init, randomGenerate, render, getDefaultTableData, getDirection} = window.utils;
+const {
+  Direction,
+  init,
+  randomGenerate,
+  render,
+  getDefaultTableData,
+  getDirection,
+} = window.utils;
 
-const table = document.getElementById('table');
+const table = document.getElementById("table");
 let tableData = [];
 const dimension = 4;
 
@@ -23,47 +30,44 @@ let isMouseMoved = false;
 let startCoordinate = null;
 let endCoordinate = null;
 
-window.addEventListener('mousedown', (e) => {
+window.addEventListener("mousedown", (e) => {
   isMouseClicked = true;
   startCoordinate = [e.clientX, e.clientY];
 });
 
-window.addEventListener('mousemove', (e) => {
-  if(!isMouseClicked) {
+window.addEventListener("mousemove", (e) => {
+  if (!isMouseClicked) {
     isMouseMoved = true;
     return;
   }
 });
 
-window.addEventListener('mouseup', (e) => {
+window.addEventListener("mouseup", (e) => {
   endCoordinate = [e.clientX, e.clientY];
 
-  if(isMouseMoved) {
+  if (isMouseMoved) {
     const direction = getDirection(startCoordinate, endCoordinate);
     console.log(direction);
 
-    switch(direction) {
+    switch (direction) {
       case Direction.LEFT: {
-        const shiftedRows = [
-          [],
-          [],
-          [],
-          []
-        ];
+        const shiftedRows = [[], [], [], []];
 
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
-            if(cell.number > 0) {
+            if (cell.number > 0) {
               const shiftedRow = shiftedRows[i];
               // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 맨 끝 요소
               const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
-              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number && !lastShiftedCell.isMerged;
+              const isCanMerge =
+                lastShiftedCell instanceof Cell &&
+                lastShiftedCell.number === cell.number &&
+                !lastShiftedCell.isMerged;
 
-              if(isCanMerge) {
+              if (isCanMerge) {
                 lastShiftedCell.number *= 2;
                 lastShiftedCell.isMerged = true;
-              }
-              else {
+              } else {
                 // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
                 shiftedRow.push(cell);
               }
@@ -82,26 +86,23 @@ window.addEventListener('mouseup', (e) => {
         break;
       }
       case Direction.RIGHT: {
-        const shiftedRows = [
-          [],
-          [],
-          [],
-          []
-        ];
+        const shiftedRows = [[], [], [], []];
 
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
-            if(cell.number > 0) {
+            if (cell.number > 0) {
               const shiftedRow = shiftedRows[i];
               // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 0번 요소
               const lastShiftedCell = shiftedRow[0];
-              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number && !lastShiftedCell.isMerged;
+              const isCanMerge =
+                lastShiftedCell instanceof Cell &&
+                lastShiftedCell.number === cell.number &&
+                !lastShiftedCell.isMerged;
 
-              if(isCanMerge) {
+              if (isCanMerge) {
                 lastShiftedCell.number *= 2;
                 lastShiftedCell.isMerged = true;
-              }
-              else {
+              } else {
                 // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 unshift
                 shiftedRow.unshift(cell);
               }
@@ -120,23 +121,23 @@ window.addEventListener('mouseup', (e) => {
         break;
       }
       case Direction.UP: {
-        const shiftedColumns = [
-          [], [], [], []
-        ];
+        const shiftedColumns = [[], [], [], []];
 
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
-            if(cell.number > 0) {
+            if (cell.number > 0) {
               const shiftedColumn = shiftedColumns[j];
               // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 맨 끝 요소
               const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
-              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number && !lastShiftedCell.isMerged;
+              const isCanMerge =
+                lastShiftedCell instanceof Cell &&
+                lastShiftedCell.number === cell.number &&
+                !lastShiftedCell.isMerged;
 
-              if(isCanMerge) {
+              if (isCanMerge) {
                 lastShiftedCell.number *= 2;
                 lastShiftedCell.isMerged = true;
-              }
-              else {
+              } else {
                 // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
                 shiftedColumn.push(cell);
               }
@@ -155,23 +156,23 @@ window.addEventListener('mouseup', (e) => {
         break;
       }
       case Direction.DOWN: {
-        const shiftedColumns = [
-          [], [], [], []
-        ];
+        const shiftedColumns = [[], [], [], []];
 
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
-            if(cell.number > 0) {
+            if (cell.number > 0) {
               const shiftedColumn = shiftedColumns[j];
               // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 0번 요소
               const lastShiftedCell = shiftedColumn[0];
-              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number && !lastShiftedCell.isMerged;
+              const isCanMerge =
+                lastShiftedCell instanceof Cell &&
+                lastShiftedCell.number === cell.number &&
+                !lastShiftedCell.isMerged;
 
-              if(isCanMerge) {
+              if (isCanMerge) {
                 lastShiftedCell.number *= 2;
                 lastShiftedCell.isMerged = true;
-              }
-              else {
+              } else {
                 // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
                 shiftedColumn.unshift(cell);
               }
