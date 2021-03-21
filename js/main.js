@@ -63,7 +63,7 @@ function getTheta (deltaX, deltaY) {
 
 function getDirection(startCoordinate, endCoordinate) {
   const deltaX = endCoordinate[0] - startCoordinate[0];
-  // 브라우저에서 y는 아래로 갈수록 +의 무한대에 가까워지기 때문에, 데카르트 좌표계로 조건을 판단하기 위해서는 뒤집어줘야 한다.
+  // 브라우저에서 y는 아래로 갈수록 양의 무한대에 가까워지기 때문에, 데카르트 좌표계로 조건을 판단하기 위해서는 뒤집어줘야 한다.
   const deltaY = -(endCoordinate[1] - startCoordinate[1]);
 
   const theta =  getTheta(deltaX, deltaY);
@@ -100,7 +100,10 @@ window.addEventListener('mouseup', (e) => {
     switch(direction) {
       case Direction.LEFT: {
         const shiftedRows = [
-          [], [], [], []
+          [],
+          [],
+          [],
+          []
         ];
 
         tableData.forEach((row, i) => {
@@ -114,6 +117,7 @@ window.addEventListener('mouseup', (e) => {
                 shiftedLastCell.number *= 2;
               }
               else {
+                // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
                 shiftedRow.push(cell);
               }
             }
@@ -132,7 +136,10 @@ window.addEventListener('mouseup', (e) => {
       }
       case Direction.RIGHT: {
         const shiftedRows = [
-          [], [], [], []
+          [],
+          [],
+          [],
+          []
         ];
 
         tableData.forEach((row, i) => {
@@ -146,6 +153,7 @@ window.addEventListener('mouseup', (e) => {
                 shiftedLastCell.number *= 2;
               }
               else {
+                // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 unshift
                 shiftedRow.unshift(cell);
               }
             }
@@ -170,7 +178,17 @@ window.addEventListener('mouseup', (e) => {
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
-              shiftedColumns[j].push(cell);
+              const shiftedColumn = shiftedColumns[j];
+              const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
+              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number;
+
+              if(isCanMerge) {
+                lastShiftedCell.number *= 2;
+              }
+              else {
+                // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
+                shiftedColumn.push(cell);
+              }
             }
           });
         });
@@ -193,7 +211,17 @@ window.addEventListener('mouseup', (e) => {
         tableData.forEach((row, i) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
-              shiftedColumns[j].push(cell);
+              const shiftedColumn = shiftedColumns[j];
+              const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
+              const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number;
+
+              if(isCanMerge) {
+                lastShiftedCell.number *= 2;
+              }
+              else {
+                // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
+                shiftedColumn.unshift(cell);
+              }
             }
           });
         });
