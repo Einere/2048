@@ -86,12 +86,15 @@ function render({tableData, table}) {
         forEach(([j, cell]) => {
           const tr = table.children[i].children[j];
           tr.textContent = cell.number === 0 ? '' : cell.number;
+
+          tr.style.color = 'black';
+          if(cell.isMerged) {
+            tr.style.color = 'lightblue';
+            cell.isMerged = false;
+          }
           if(cell.isNew) {
             tr.style.color = 'tomato';
             cell.isNew = false;
-          }
-          else {
-            tr.style.color = 'black';
           }
         })
       )

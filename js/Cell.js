@@ -5,6 +5,7 @@ class Cell {
               }) {
     this.number = number;
     this.isNew = isNew;
+    this.isMerged = false;
   }
 }
 
