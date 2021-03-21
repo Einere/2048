@@ -79,6 +79,7 @@ window.addEventListener("mouseup", (e) => {
 
         shiftedRows.forEach((column, i) => {
           column.forEach((cell, j) => {
+            // 행(i)는 고정
             tableData[i][j] = cell;
           });
         });
@@ -114,6 +115,7 @@ window.addEventListener("mouseup", (e) => {
 
         shiftedRows.forEach((column, i) => {
           column.forEach((cell, j) => {
+            // 행(i)는 고정
             tableData[i][dimension - 1 - j] = cell;
           });
         });
@@ -149,6 +151,7 @@ window.addEventListener("mouseup", (e) => {
 
         shiftedColumns.forEach((column, j) => {
           column.forEach((cell, i) => {
+            // 열(j)은 고정
             tableData[i][j] = cell;
           });
         });
@@ -184,6 +187,7 @@ window.addEventListener("mouseup", (e) => {
 
         shiftedColumns.forEach((column, j) => {
           column.forEach((cellData, i) => {
+            // 열(j)은 고정
             tableData[dimension - 1 - i][j] = cellData;
           });
         });
