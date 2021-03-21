@@ -141,6 +141,8 @@ function getDirection(startCoordinate, endCoordinate) {
     return Direction.DOWN;
   } else if (isUpper315 || isLower45) {
     return Direction.RIGHT;
+  } else {
+    return null;
   }
 }
 
