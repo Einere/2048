@@ -193,10 +193,10 @@ function operate() {
   });
 
   if (isEnd) {
-    window.removeEventListener("mousedown", mouseDownHandler);
-    window.removeEventListener("mouseup", mouseUpHandler);
-    window.removeEventListener("touchstart", mouseDownHandler);
-    window.removeEventListener("touchend", mouseUpHandler);
+    document.removeEventListener("mousedown", mouseDownHandler);
+    document.removeEventListener("mouseup", mouseUpHandler);
+    document.removeEventListener("touchstart", mouseDownHandler);
+    document.removeEventListener("touchend", mouseUpHandler);
     return;
   }
 
@@ -236,7 +236,10 @@ function touchEndHandler(e) {
   operate();
 }
 
-window.addEventListener("mousedown", mouseDownHandler);
-window.addEventListener("mouseup", mouseUpHandler);
-window.addEventListener("touchstart", touchStartHandler, false);
-window.addEventListener("touchend", touchEndHandler, false);
+document.addEventListener("mousedown", mouseDownHandler);
+document.addEventListener("mouseup", mouseUpHandler);
+document.addEventListener("touchstart", touchStartHandler, false);
+document.addEventListener("touchmove", (e) => e.preventDefault(), {
+  passive: false,
+});
+document.addEventListener("touchend", touchEndHandler, false);
