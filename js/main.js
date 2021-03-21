@@ -91,7 +91,7 @@ window.addEventListener('mouseup', (e) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
               const shiftedRow = shiftedRows[i];
-              const shiftedLastCell = shiftedRow[shiftedRow.length - 1];
+              const shiftedLastCell = shiftedRow[0];
               const isCanMerge = shiftedLastCell instanceof Cell && shiftedLastCell.number === cell.number;
 
               if(isCanMerge) {
@@ -157,7 +157,7 @@ window.addEventListener('mouseup', (e) => {
           row.forEach((cell, j) => {
             if(cell.number > 0) {
               const shiftedColumn = shiftedColumns[j];
-              const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
+              const lastShiftedCell = shiftedColumn[0];
               const isCanMerge = lastShiftedCell instanceof Cell && lastShiftedCell.number === cell.number;
 
               if(isCanMerge) {

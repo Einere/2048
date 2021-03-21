@@ -25,6 +25,12 @@ function init({table, dimension}) {
   const fragment = document.createDocumentFragment();
   const tableData = getDefaultTableData(dimension);
 
+  tableData[0][0] = new Cell({number: 2});
+  tableData[0][2] = new Cell({number: 2});
+  tableData[0][3] = new Cell({number: 4});
+
+
+
   go(
     tableData,
     forEach((row) => {
@@ -59,6 +65,10 @@ function randomGenerate({tableData}) {
     flat,
     filter(indexedData => indexedData[2].number === 0)
   );
+
+  if (filteredIndexedData.length === 0) {
+    return;
+  }
 
   const randomIndex = Math.floor(Math.random() * filteredIndexedData.length);
   const [i, j] = filteredIndexedData[randomIndex];
