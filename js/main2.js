@@ -128,8 +128,8 @@ function operate() {
 
       tableData = getDefaultTableData(dimension);
 
-      shiftedRows.forEach((column, i) => {
-        column.forEach((cell, j) => {
+      shiftedRows.forEach((row, i) => {
+        row.forEach((cell, j) => {
           // 행(i)는 고정
           tableData[i][j] = cell;
         });
@@ -164,8 +164,8 @@ function operate() {
 
       tableData = getDefaultTableData(dimension);
 
-      shiftedRows.forEach((column, i) => {
-        column.forEach((cell, j) => {
+      shiftedRows.forEach((row, i) => {
+        row.forEach((cell, j) => {
           // 행(i)는 고정
           tableData[i][dimension - 1 - j] = cell;
         });
