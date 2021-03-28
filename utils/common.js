@@ -82,18 +82,17 @@ function render({ tableData, table, scoreRef, score }) {
         tableData[i],
         zipWithIndexL,
         forEach(([j, cell]) => {
-          const tr = table.children[i].children[j];
-          tr.textContent = cell.number === 0 ? "" : cell.number;
-
-          tr.style.color = "black";
-          if (cell.isMerged) {
-            tr.style.color = "lightblue";
-            cell.isMerged = false;
-          }
-          if (cell.isNew) {
-            tr.style.color = "tomato";
-            cell.isNew = false;
-          }
+          const td = table.children[i].children[j];
+          td.textContent = cell.number;
+          cell.number === 0
+            ? td.classList.add("hide")
+            : td.classList.remove("hide");
+          cell.isMerged
+            ? td.classList.add("merged")
+            : td.classList.remove("merged");
+          cell.isMerged = false;
+          cell.isNew ? td.classList.add("new") : td.classList.remove("new");
+          cell.isNew = false;
         })
       );
     })

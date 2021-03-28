@@ -48,6 +48,8 @@ function operate() {
       tableData.forEach((row, i) => {
         row.forEach((cell, j) => {
           if (cell.number > 0) {
+            const td = table.children[i].children[j];
+
             const shiftedRow = shiftedRows[i];
             // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 맨 끝 요소
             const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
@@ -62,6 +64,11 @@ function operate() {
             } else {
               // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
               shiftedRow.push(cell);
+
+              const afterIndex = shiftedRow.findIndex(
+                (shiftedCell) => shiftedCell === cell
+              );
+              td.classList.add(`position-${afterIndex - j}-${i}`);
             }
           }
         });
