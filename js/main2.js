@@ -98,12 +98,12 @@ function drawCells({ context, cellData }) {
           const deltaLeft = cell.deltaLeft;
 
           if (deltaTop !== 0) {
-            const delta = deltaTop > 0 ? -10 : 10;
+            const delta = deltaTop > 0 ? 10 : -10;
             cell.top += delta;
             cell.deltaTop -= delta;
           }
           if (deltaLeft !== 0) {
-            const delta = deltaTop > 0 ? 10 : -10;
+            const delta = deltaLeft > 0 ? 10 : -10;
             cell.left += delta;
             cell.deltaLeft -= delta;
           }
@@ -186,7 +186,6 @@ function operate() {
         row.forEach((cell, j) => {
           if (cell instanceof Cell && cell.number > 0) {
             const shiftedRow = shiftedRows[i];
-            // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 맨 끝 요소
             const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
             const isCanMerge =
               lastShiftedCell instanceof Cell &&
@@ -197,7 +196,6 @@ function operate() {
               lastShiftedCell.number *= 2;
               lastShiftedCell.isMerged = true;
             } else {
-              // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
               shiftedRow.push(cell);
 
               const afterIndex = shiftedRow.findIndex(
@@ -220,15 +218,14 @@ function operate() {
 
       break;
     }
-    /*case Direction.RIGHT: {
+    case Direction.RIGHT: {
       const shiftedRows = [[], [], [], []];
 
       cellData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.number > 0) {
+        row.reverse().forEach((cell, j) => {
+          if (cell instanceof Cell && cell.number > 0) {
             const shiftedRow = shiftedRows[i];
-            // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 0번 요소
-            const lastShiftedCell = shiftedRow[0];
+            const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
             const isCanMerge =
               lastShiftedCell instanceof Cell &&
               lastShiftedCell.number === cell.number &&
@@ -238,14 +235,18 @@ function operate() {
               lastShiftedCell.number *= 2;
               lastShiftedCell.isMerged = true;
             } else {
-              // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 unshift
-              shiftedRow.unshift(cell);
+              shiftedRow.push(cell);
+
+              const afterIndex = shiftedRow.findIndex(
+                (shiftedCell) => shiftedCell === cell
+              );
+              cell.deltaLeft = (j - afterIndex) * cellOuterSize;
             }
           }
         });
       });
 
-      cellData = getDefaultcellData(dimension);
+      cellData = getDefaultCellData(dimension);
 
       shiftedRows.forEach((row, i) => {
         row.forEach((cell, j) => {
@@ -261,9 +262,8 @@ function operate() {
 
       cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
-          if (cell.number > 0) {
+          if (cell instanceof Cell && cell.number > 0) {
             const shiftedColumn = shiftedColumns[j];
-            // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 맨 끝 요소
             const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
             const isCanMerge =
               lastShiftedCell instanceof Cell &&
@@ -274,14 +274,18 @@ function operate() {
               lastShiftedCell.number *= 2;
               lastShiftedCell.isMerged = true;
             } else {
-              // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
               shiftedColumn.push(cell);
+
+              const afterIndex = shiftedColumn.findIndex(
+                (shiftedCell) => shiftedCell === cell
+              );
+              cell.deltaTop = (afterIndex - i) * cellOuterSize;
             }
           }
         });
       });
 
-      cellData = getDefaultcellData(dimension);
+      cellData = getDefaultCellData(dimension);
 
       shiftedColumns.forEach((column, j) => {
         column.forEach((cell, i) => {
@@ -297,10 +301,9 @@ function operate() {
 
       cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
-          if (cell.number > 0) {
+          if (cell instanceof Cell && cell.number > 0) {
             const shiftedColumn = shiftedColumns[j];
-            // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 0번 요소
-            const lastShiftedCell = shiftedColumn[0];
+            const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
             const isCanMerge =
               lastShiftedCell instanceof Cell &&
               lastShiftedCell.number === cell.number &&
@@ -310,24 +313,28 @@ function operate() {
               lastShiftedCell.number *= 2;
               lastShiftedCell.isMerged = true;
             } else {
-              // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
-              shiftedColumn.unshift(cell);
+              shiftedColumn.push(cell);
+
+              const afterIndex = shiftedColumn.findIndex(
+                (shiftedCell) => shiftedCell === cell
+              );
+              cell.deltaTop = (i - afterIndex) * cellOuterSize;
             }
           }
         });
       });
 
-      cellData = getDefaultcellData(dimension);
+      cellData = getDefaultCellData(dimension);
 
       shiftedColumns.forEach((column, j) => {
-        column.forEach((cellData, i) => {
+        column.forEach((cell, i) => {
           // 열(j)은 고정
-          cellData[dimension - 1 - i][j] = cellData;
+          cellData[dimension - 1 - i][j] = cell;
         });
       });
 
       break;
-    }*/
+    }
   }
 
   const isEnd = randomGenerate({
