@@ -1,9 +1,4 @@
-const {
-  Direction,
-  randomGenerate,
-  getDefaultTableData,
-  getDirection,
-} = window.utils;
+const { Direction, getDirection } = window.utils;
 const fxjs = window._;
 const { go, range, forEach, map, zipWithIndexL, filter, flat, takeAll } = fxjs;
 
@@ -13,32 +8,110 @@ const cellSize = 80;
 const cellMargin = (cellOuterSize - cellSize) / 2;
 const canvasRef = document.getElementById("canvas");
 const context = canvasRef.getContext("2d");
-let tableData = [];
+let cellData = null;
 const scoreRef = document.getElementById("score");
 let score = 0;
 
-function drawBackground({ context }) {
-  context.strokeRect(0, 0, cellOuterSize * 4, cellOuterSize * 4);
+function randomGenerate({ cellData }) {
+  const filteredIndexedData = go(
+    cellData,
+    zipWithIndexL,
+    map(([i, row]) =>
+      go(
+        cellData[i],
+        zipWithIndexL,
+        map(([j, cell]) => [i, j, cell])
+      )
+    ),
+    flat,
+    filter((indexedData) => indexedData[2] === null)
+  );
+
+  if (filteredIndexedData.length === 0) {
+    return true;
+  }
+
+  const randomIndex = Math.floor(Math.random() * filteredIndexedData.length);
+  const [i, j] = filteredIndexedData[randomIndex];
+  cellData[i][j] = new Cell({
+    number: 2,
+    isNew: true,
+    top: i * cellOuterSize,
+    left: j * cellOuterSize,
+  });
+
+  return false;
 }
 
-function drawCells({ context, tableData }) {
+function getDefaultCellData(dimension) {
+  return go(
+    range(dimension),
+    map((i) => {
+      /*return go(
+        range(dimension),
+        map(
+          (j) => new Cell({ top: i * cellOuterSize, left: j * cellOuterSize })
+        )
+      );*/
+      return new Array(dimension).fill(null);
+    })
+  );
+}
+
+function drawBackground({ context }) {
+  context.fillStyle = "#bbada0";
+  context.fillRect(0, 0, cellOuterSize * dimension, cellOuterSize * dimension);
+
   go(
-    tableData,
+    range(dimension),
+    forEach((i) => {
+      go(
+        range(dimension),
+        forEach((j) => {
+          context.fillStyle = "rgba(238, 228, 218, 0.35)";
+          context.fillRect(
+            i * cellOuterSize + cellMargin,
+            j * cellOuterSize + cellMargin,
+            cellSize,
+            cellSize
+          );
+        })
+      );
+    })
+  );
+}
+
+function drawCells({ context, cellData }) {
+  go(
+    cellData,
     zipWithIndexL,
     forEach(([i, row]) => {
       go(
         row,
         zipWithIndexL,
         forEach(([j, cell]) => {
-          const top = cellOuterSize * i;
-          const left = cellOuterSize * j;
+          if (!(cell instanceof Cell)) {
+            return;
+          }
 
-          context.fillStyle = "white";
-          context.fillRect(left, top, cellOuterSize, cellOuterSize);
-          context.fillStyle = "lightsteelblue";
+          const deltaTop = cell.deltaTop;
+          const deltaLeft = cell.deltaLeft;
+
+          if (deltaTop !== 0) {
+            const delta = deltaTop > 0 ? -10 : 10;
+            cell.top += delta;
+            cell.deltaTop -= delta;
+          }
+          if (deltaLeft !== 0) {
+            const delta = deltaTop > 0 ? 10 : -10;
+            cell.left += delta;
+            cell.deltaLeft -= delta;
+          }
+
+          context.fillStyle = "#eee4da";
           context.fillRect(
-            left + cellMargin,
-            top + cellMargin,
+            cell.left + cellMargin,
+            cell.top + cellMargin,
             cellSize,
             cellSize
           );
@@ -56,8 +129,8 @@ function drawCells({ context, tableData }) {
             context.font = "36px san-serif";
             context.fillText(
               cell.number,
-              left + cellMargin,
-              top + cellSize / 2
+              cell.left + cellMargin,
+              cell.top + cellSize / 2
             );
           }
         })
@@ -65,26 +138,31 @@ function drawCells({ context, tableData }) {
     })
   );
 
-  return tableData;
+  return cellData;
 }
 
 function init({ context, dimension }) {
-  const tableData = getDefaultTableData(dimension);
-  render({ context, tableData });
+  const cellData = getDefaultCellData(dimension);
+  render({ context, cellData });
 
-  return tableData;
+  return cellData;
 }
 
-function render({ context, tableData }) {
+function render({ context, cellData }) {
   // draw background
   drawBackground({ context });
-  drawCells({ context, tableData });
+  drawCells({ context, cellData });
   scoreRef.textContent = score.toString();
 }
 
-tableData = init({ context, dimension });
-randomGenerate({ tableData });
-render({ context, tableData });
+cellData = init({ context, dimension });
+randomGenerate({ cellData });
+console.log(cellData);
+// render({ context, cellData });
+setInterval(() => {
+  console.log(cellData);
+  render({ context, cellData });
+}, 100);
 
 // 드래그 방향을 계산
 // 인강에서는 delta 값의 양음 여부와 기울기로 판단.
@@ -104,9 +182,9 @@ function operate() {
     case Direction.LEFT: {
       const shiftedRows = [[], [], [], []];
 
-      tableData.forEach((row, i) => {
+      cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
-          if (cell.number > 0) {
+          if (cell instanceof Cell && cell.number > 0) {
             const shiftedRow = shiftedRows[i];
             // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 맨 끝 요소
             const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
@@ -121,26 +199,31 @@ function operate() {
             } else {
               // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
               shiftedRow.push(cell);
+
+              const afterIndex = shiftedRow.findIndex(
+                (shiftedCell) => shiftedCell === cell
+              );
+              cell.deltaLeft = (afterIndex - j) * cellOuterSize;
             }
           }
         });
       });
 
-      tableData = getDefaultTableData(dimension);
+      cellData = getDefaultCellData(dimension);
 
       shiftedRows.forEach((row, i) => {
         row.forEach((cell, j) => {
           // 행(i)는 고정
-          tableData[i][j] = cell;
+          cellData[i][j] = cell;
         });
       });
 
       break;
     }
-    case Direction.RIGHT: {
+    /*case Direction.RIGHT: {
       const shiftedRows = [[], [], [], []];
 
-      tableData.forEach((row, i) => {
+      cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
           if (cell.number > 0) {
             const shiftedRow = shiftedRows[i];
@@ -162,12 +245,12 @@ function operate() {
         });
       });
 
-      tableData = getDefaultTableData(dimension);
+      cellData = getDefaultcellData(dimension);
 
       shiftedRows.forEach((row, i) => {
         row.forEach((cell, j) => {
           // 행(i)는 고정
-          tableData[i][dimension - 1 - j] = cell;
+          cellData[i][dimension - 1 - j] = cell;
         });
       });
 
@@ -176,7 +259,7 @@ function operate() {
     case Direction.UP: {
       const shiftedColumns = [[], [], [], []];
 
-      tableData.forEach((row, i) => {
+      cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
           if (cell.number > 0) {
             const shiftedColumn = shiftedColumns[j];
@@ -198,12 +281,12 @@ function operate() {
         });
       });
 
-      tableData = getDefaultTableData(dimension);
+      cellData = getDefaultcellData(dimension);
 
       shiftedColumns.forEach((column, j) => {
         column.forEach((cell, i) => {
           // 열(j)은 고정
-          tableData[i][j] = cell;
+          cellData[i][j] = cell;
         });
       });
 
@@ -212,7 +295,7 @@ function operate() {
     case Direction.DOWN: {
       const shiftedColumns = [[], [], [], []];
 
-      tableData.forEach((row, i) => {
+      cellData.forEach((row, i) => {
         row.forEach((cell, j) => {
           if (cell.number > 0) {
             const shiftedColumn = shiftedColumns[j];
@@ -234,21 +317,21 @@ function operate() {
         });
       });
 
-      tableData = getDefaultTableData(dimension);
+      cellData = getDefaultcellData(dimension);
 
       shiftedColumns.forEach((column, j) => {
         column.forEach((cellData, i) => {
           // 열(j)은 고정
-          tableData[dimension - 1 - i][j] = cellData;
+          cellData[dimension - 1 - i][j] = cellData;
         });
       });
 
       break;
-    }
+    }*/
   }
 
   const isEnd = randomGenerate({
-    tableData,
+    cellData,
   });
 
   if (isEnd) {
@@ -261,10 +344,10 @@ function operate() {
 
   score += 1;
 
-  render({
+  /*render({
     context,
-    tableData,
-  });
+    cellData,
+  });*/
 
   isMouseClicked = false;
 }
