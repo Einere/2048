@@ -299,7 +299,7 @@ function operate() {
     case Direction.DOWN: {
       const shiftedColumns = [[], [], [], []];
 
-      cellData.forEach((row, i) => {
+      cellData.reverse().forEach((row, i) => {
         row.forEach((cell, j) => {
           if (cell instanceof Cell && cell.number > 0) {
             const shiftedColumn = shiftedColumns[j];
