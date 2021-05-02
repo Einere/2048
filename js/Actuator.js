@@ -1,3 +1,4 @@
+/*
 export function HTMLActuator() {
   this.tileContainer = document.querySelector(".tile-container");
   this.scoreContainer = document.querySelector(".score-container");
@@ -150,3 +151,4 @@ HTMLActuator.prototype.clearMessage = function () {
   this.messageContainer.classList.remove("game-won");
   this.messageContainer.classList.remove("game-over");
 };
+*/

@@ -1,3 +1,4 @@
+/*
 export function Tile(position, value) {
   this.x = position.x;
   this.y = position.y;
@@ -25,3 +26,4 @@ Tile.prototype.serialize = function () {
     value: this.value,
   };
 };
+*/
