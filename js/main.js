@@ -1,252 +1,128 @@
+const fxjs = window._;
 const {
-  Direction,
-  init,
-  randomGenerate,
-  render,
-  getDefaultTableData,
-  getDirection,
-} = window.utils;
+  go,
+  range,
+  forEach,
+  map,
+  zipWithIndexL,
+  filter,
+  flat,
+  when,
+  tap,
+} = fxjs;
 
-const table = document.getElementById("table");
-let tableData = [];
-const dimension = 4;
-const scoreRef = document.getElementById("score");
-let score = 0;
-
-tableData = init({
-  table,
-  dimension,
-});
-randomGenerate({
-  tableData,
-});
-render({
-  tableData,
-  table,
-  scoreRef,
-  score,
-});
-
-// 드래그 방향을 계산
-// 인강에서는 delta 값의 양음 여부와 기울기로 판단.
-let isMouseClicked = false;
-let startCoordinate = null;
-let endCoordinate = null;
-
-function operate() {
-  const direction = getDirection(startCoordinate, endCoordinate);
-
-  if (direction === null) {
-    return;
+class Grid {
+  constructor(size) {
+    this.size = size;
+    this.cells = this.init();
   }
-  console.log(direction);
 
-  switch (direction) {
-    case Direction.LEFT: {
-      const shiftedRows = [[], [], [], []];
+  init() {
+    const cells = [];
 
-      tableData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.number > 0) {
-            const td = table.children[i].children[j];
+    go(
+      range(this.size),
+      forEach((i) => {
+        cells.push([]);
 
-            const shiftedRow = shiftedRows[i];
-            // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 맨 끝 요소
-            const lastShiftedCell = shiftedRow[shiftedRow.length - 1];
-            const isCanMerge =
-              lastShiftedCell instanceof Cell &&
-              lastShiftedCell.number === cell.number &&
-              !lastShiftedCell.isMerged;
+        go(
+          range(this.size),
+          forEach((j) => {
+            cells[i].push(null);
+          })
+        );
+      })
+    );
 
-            if (isCanMerge) {
-              lastShiftedCell.number *= 2;
-              lastShiftedCell.isMerged = true;
-            } else {
-              // 순회 방향(L->R) 과 리렌더 방향(L->R) 이 같으므로 Push
-              shiftedRow.push(cell);
+    return cells;
+  }
 
-              const afterIndex = shiftedRow.findIndex(
-                (shiftedCell) => shiftedCell === cell
-              );
-              td.classList.add(`position-${afterIndex - j}-${i}`);
-            }
-          }
-        });
-      });
-
-      tableData = getDefaultTableData(dimension);
-
-      shiftedRows.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          // 행(i)는 고정
-          tableData[i][j] = cell;
-        });
-      });
-
-      break;
-    }
-    case Direction.RIGHT: {
-      const shiftedRows = [[], [], [], []];
-
-      tableData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.number > 0) {
-            const shiftedRow = shiftedRows[i];
-            // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 0번 요소
-            const lastShiftedCell = shiftedRow[0];
-            const isCanMerge =
-              lastShiftedCell instanceof Cell &&
-              lastShiftedCell.number === cell.number &&
-              !lastShiftedCell.isMerged;
-
-            if (isCanMerge) {
-              lastShiftedCell.number *= 2;
-              lastShiftedCell.isMerged = true;
-            } else {
-              // 순회 방향(L->R) 과 리렌더 방향(R->L) 이 다르므로 unshift
-              shiftedRow.unshift(cell);
-            }
-          }
-        });
-      });
-
-      tableData = getDefaultTableData(dimension);
-
-      shiftedRows.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          // 행(i)는 고정
-          tableData[i][dimension - 1 - j] = cell;
-        });
-      });
-
-      break;
-    }
-    case Direction.UP: {
-      const shiftedColumns = [[], [], [], []];
-
-      tableData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.number > 0) {
-            const shiftedColumn = shiftedColumns[j];
-            // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 맨 끝 요소
-            const lastShiftedCell = shiftedColumn[shiftedColumn.length - 1];
-            const isCanMerge =
-              lastShiftedCell instanceof Cell &&
-              lastShiftedCell.number === cell.number &&
-              !lastShiftedCell.isMerged;
-
-            if (isCanMerge) {
-              lastShiftedCell.number *= 2;
-              lastShiftedCell.isMerged = true;
-            } else {
-              // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
-              shiftedColumn.push(cell);
-            }
-          }
-        });
-      });
-
-      tableData = getDefaultTableData(dimension);
-
-      shiftedColumns.forEach((column, j) => {
-        column.forEach((cell, i) => {
-          // 열(j)은 고정
-          tableData[i][j] = cell;
-        });
-      });
-
-      break;
-    }
-    case Direction.DOWN: {
-      const shiftedColumns = [[], [], [], []];
-
-      tableData.forEach((row, i) => {
-        row.forEach((cell, j) => {
-          if (cell.number > 0) {
-            const shiftedColumn = shiftedColumns[j];
-            // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 0번 요소
-            const lastShiftedCell = shiftedColumn[0];
-            const isCanMerge =
-              lastShiftedCell instanceof Cell &&
-              lastShiftedCell.number === cell.number &&
-              !lastShiftedCell.isMerged;
-
-            if (isCanMerge) {
-              lastShiftedCell.number *= 2;
-              lastShiftedCell.isMerged = true;
-            } else {
-              // 순회 방향(U->D)과 리렌더 방향(U->D) 이 같으므로 push
-              shiftedColumn.unshift(cell);
-            }
-          }
-        });
-      });
-
-      tableData = getDefaultTableData(dimension);
-
-      shiftedColumns.forEach((column, j) => {
-        column.forEach((cellData, i) => {
-          // 열(j)은 고정
-          tableData[dimension - 1 - i][j] = cellData;
-        });
-      });
-
-      break;
+  eachCell(callback) {
+    for (let i = 0; i < this.size; i++) {
+      for (let j = 0; j < this.size; j++) {
+        callback(i, j, this.cells[i][j]);
+      }
     }
   }
 
-  const isEnd = randomGenerate({
-    tableData,
-  });
+  mapCell(callback) {
+    const mapped = [];
 
-  if (isEnd) {
-    document.removeEventListener("mousedown", mouseDownHandler);
-    document.removeEventListener("mouseup", mouseUpHandler);
-    document.removeEventListener("touchstart", mouseDownHandler);
-    document.removeEventListener("touchend", mouseUpHandler);
-    return;
+    for (let i = 0; i < this.size; i++) {
+      const mappedRow = [];
+      for (let j = 0; j < this.size; j++) {
+        const result = callback(i, j, this.cells[i][j]);
+
+        if (result) {
+          mappedRow.push(result);
+        }
+      }
+      mapped.push(mappedRow);
+    }
+
+    return mapped;
   }
 
-  score += 1;
+  availablePositions() {
+    return this.mapCell((i, j, cell) => {
+      if (!cell) {
+        return {
+          i,
+          j,
+        };
+      }
+    });
+  }
 
-  render({
-    tableData,
-    table,
-    scoreRef,
-    score,
-  });
+  randomAvailablePosition() {
+    const availableCells = this.availablePositions();
 
-  isMouseClicked = false;
+    function random(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    return go(
+      availableCells,
+      flat,
+      when((flatten) => flatten.length, random)
+    );
+  }
+
+  existAvailableCell() {
+    return !!this.availablePositions().length;
+  }
+
+  availableCell(cell) {
+    return !this.cellOccupied(cell);
+  }
+
+  cellOccupied(cell) {
+    return !!this.getCell(cell);
+  }
+
+  getCell(cell) {
+    if (this.withinBounds(cell)) {
+      return this.cells[cell.x][cell.y];
+    } else {
+      return null;
+    }
+  }
+
+  withinBounds(cell) {
+    return (
+      cell.x >= 0 && cell.x < this.size && cell.y >= 0 && cell.y < this.size
+    );
+  }
+
+  insertTile(tile) {
+    this.cells[tile.x][tile.y] = tile;
+  }
+
+  removeTile(tile) {
+    this.cells[tile.x][tile.y] = null;
+  }
 }
 
-function mouseDownHandler(e) {
-  isMouseClicked = true;
-  startCoordinate = [e.clientX, e.clientY];
-}
-
-function mouseUpHandler(e) {
-  endCoordinate = [e.clientX, e.clientY];
-
-  operate();
-}
-
-function touchStartHandler(e) {
-  isMouseClicked = true;
-  const touch = e.touches[0];
-  startCoordinate = [touch.clientX, touch.clientY];
-}
-
-function touchEndHandler(e) {
-  const touch = e.changedTouches[0];
-  endCoordinate = [touch.clientX, touch.clientY];
-
-  operate();
-}
-
-document.addEventListener("mousedown", mouseDownHandler);
-document.addEventListener("mouseup", mouseUpHandler);
-document.addEventListener("touchstart", touchStartHandler, false);
-document.addEventListener("touchmove", (e) => e.preventDefault(), {
-  passive: false,
-});
-document.addEventListener("touchend", touchEndHandler, false);
+const grid = new Grid(4);
+const position = grid.randomAvailablePosition();
+console.log(position);
