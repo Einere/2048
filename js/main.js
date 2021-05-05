@@ -148,7 +148,7 @@ class GameManager {
   constructor(size, InputManager, Actuator) {
     this.size = size; // Size of the grid
     // this.inputManager = new InputManager();
-    // this.actuator = new Actuator();
+    this.actuator = new Actuator();
 
     this.startTiles = 2;
 
@@ -170,7 +170,7 @@ class GameManager {
     this.addStartTiles();
 
     // Update the actuator
-    // this.actuate();
+    this.actuate();
   }
 
   addStartTiles() {
@@ -185,6 +185,139 @@ class GameManager {
       this.grid.insertTile(tile);
     }
   }
+
+  actuate() {
+    this.actuator.actuate(this.grid, {
+      score: this.score,
+      over: this.over,
+      won: this.won,
+      // bestScore: this.storageManager.getBestScore(),
+      bestScore: 0,
+      terminated: this.isGameTerminated(),
+    });
+  }
+
+  isGameTerminated() {
+    return this.over || (this.won && !this.keepPlaying);
+  }
 }
-const gameManager = new GameManager(4);
+
+class HTMLActuator {
+  constructor() {
+    this.tileContainer = document.querySelector(".tile-container");
+    this.scoreContainer = document.querySelector(".score-container");
+    this.bestContainer = document.querySelector(".best-container");
+    this.messageContainer = document.querySelector(".game-message");
+
+    this.score = 0;
+  }
+
+  clearContainer(container) {
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+  }
+
+  applyClasses(element, classes) {
+    element.setAttribute("class", classes.join(" "));
+  }
+
+  normalizePosition(position) {
+    return { x: position.x + 1, y: position.y + 1 };
+  }
+
+  positionClass(position) {
+    position = this.normalizePosition(position);
+    return `tile-position-${position.x}-${position.y}`;
+  }
+
+  addTile(tile) {
+    const self = this;
+
+    const wrapper = document.createElement("div");
+    const inner = document.createElement("div");
+    const position = tile.previousPosition || { x: tile.x, y: tile.y };
+    const positionClass = this.positionClass(position);
+
+    // We can't use classlist because it somehow glitches when replacing classes
+    const classes = ["tile", `tile-${tile.value}`, positionClass];
+
+    if (tile.value > 2048) classes.push("tile-super");
+
+    this.applyClasses(wrapper, classes);
+
+    inner.classList.add("tile-inner");
+    inner.textContent = tile.value;
+
+    // render previous, and make it to move current position
+    if (tile.previousPosition) {
+      window.requestAnimationFrame(function () {
+        classes[2] = self.positionClass({ x: tile.x, y: tile.y });
+        self.applyClasses(wrapper, classes);
+      });
+    } else if (tile.mergedFrom) {
+      classes.push("tile-merged");
+      this.applyClasses(wrapper, classes);
+
+      // Render the tiles that merged
+      tile.mergedFrom.forEach(function (merged) {
+        self.addTile(merged);
+      });
+    } else {
+      classes.push("tile-new");
+      this.applyClasses(wrapper, classes);
+    }
+
+    // Add the inner part of the tile to the wrapper
+    wrapper.appendChild(inner);
+
+    // Put the tile on the board
+    this.tileContainer.appendChild(wrapper);
+  }
+
+  actuate(grid, metadata) {
+    const self = this;
+
+    function render() {
+      self.clearContainer(self.tileContainer);
+      grid.eachCell((i, j, cell) => (cell ? self.addTile(cell) : null));
+
+      self.updateScore(metadata.score);
+      self.updateBestScore(metadata.bestScore);
+
+      // if (metadata.terminated) {
+      //   if (metadata.over) {
+      //     self.message(false); // You lose
+      //   } else if (metadata.won) {
+      //     self.message(true); // You win!
+      //   }
+      // }
+    }
+
+    window.requestAnimationFrame(render);
+  }
+
+  updateScore(score) {
+    this.clearContainer(this.scoreContainer);
+
+    const difference = score - this.score;
+    this.score = score;
+
+    this.scoreContainer.textContent = this.score;
+
+    if (difference > 0) {
+      const addition = document.createElement("div");
+      addition.classList.add("score-addition");
+      addition.textContent = `+${difference}`;
+
+      this.scoreContainer.appendChild(addition);
+    }
+  }
+
+  updateBestScore(bestScore) {
+    this.bestContainer.textContent = bestScore;
+  }
+}
+
+const gameManager = new GameManager(4, null, HTMLActuator);
 console.log(gameManager);
