@@ -123,8 +123,8 @@ class Grid {
 
 class Tile {
   constructor(position, value) {
-    this.x = position.x;
-    this.y = position.y;
+    this.row = position.row;
+    this.column = position.column;
     this.value = value || 2;
 
     this.previousPosition = null;
@@ -132,12 +132,12 @@ class Tile {
   }
 
   savePosition() {
-    this.previousPosition = { x: this.x, y: this.y };
+    this.previousPosition = { row: this.row, column: this.column };
   }
 
   updatePosition(position) {
-    this.x = position.x;
-    this.y = position.y;
+    this.row = position.row;
+    this.column = position.column;
   }
 }
 
