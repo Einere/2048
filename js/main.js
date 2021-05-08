@@ -78,7 +78,6 @@ class Grid {
 
   getAvailablePosition() {
     const positions = this.getAvailablePositions();
-
     return go(
       positions,
       flat,
@@ -399,23 +398,19 @@ class HTMLActuator {
     element.setAttribute("class", classes.join(" "));
   }
 
-  normalizePosition(position) {
-    return { x: position.x + 1, y: position.y + 1 };
-  }
-
   positionClass(position) {
-    position = this.normalizePosition(position);
-    return `tile-position-${position.x}-${position.y}`;
+    return `tile-position-${position.row}-${position.column}`;
   }
 
   addTile(tile) {
     const self = this;
     const wrapper = document.createElement("div");
     const inner = document.createElement("div");
-    const position = tile.previousPosition || { x: tile.x, y: tile.y };
+    const position = tile.previousPosition || {
+      row: tile.row,
+      column: tile.column,
+    };
     const positionClass = this.positionClass(position);
-    console.log("addTile", tile, positionClass);
-
     // We can't use classlist because it somehow glitches when replacing classes
     const classes = ["tile", `tile-${tile.value}`, positionClass];
 
@@ -429,7 +424,7 @@ class HTMLActuator {
     // render previous, and make it to move current position
     if (tile.previousPosition) {
       window.requestAnimationFrame(function () {
-        classes[2] = self.positionClass({ x: tile.x, y: tile.y });
+        classes[2] = self.positionClass({ row: tile.row, column: tile.column });
         self.applyClasses(wrapper, classes);
       });
     } else if (tile.mergedFrom) {
@@ -457,7 +452,7 @@ class HTMLActuator {
 
     function render() {
       self.clearContainer(self.tileContainer);
-      grid.eachCell((i, j, cell) => (cell ? self.addTile(cell) : null));
+      grid.eachCell((row, column, cell) => (cell ? self.addTile(cell) : null));
 
       self.updateScore(metadata.score);
       self.updateBestScore(metadata.bestScore);
@@ -527,7 +522,6 @@ class InputManager {
 
   emit(event, data) {
     const callbacks = this.events[event];
-    console.log("input manager emit", this.events, event, data);
     if (callbacks) {
       callbacks.forEach(function (callback) {
         callback(data);
