@@ -100,24 +100,24 @@ class Grid {
 
   getCellContent(cell) {
     if (this.withinBounds(cell)) {
-      return this.cells[cell.x][cell.y];
+      return this.cells[cell.row][cell.column];
     } else {
       return null;
     }
   }
 
   withinBounds(cell) {
-    return (
-      cell.x >= 0 && cell.x < this.size && cell.y >= 0 && cell.y < this.size
-    );
+    const isInAboutRow = cell.row >= 0 && cell.row < this.size;
+    const isInAboutColumn = cell.column >= 0 && cell.column < this.size;
+    return isInAboutRow && isInAboutColumn;
   }
 
   insertTile(tile) {
-    this.cells[tile.x][tile.y] = tile;
+    this.cells[tile.row][tile.column] = tile;
   }
 
   removeTile(tile) {
-    this.cells[tile.x][tile.y] = null;
+    this.cells[tile.row][tile.column] = null;
   }
 }
 
