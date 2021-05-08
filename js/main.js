@@ -10,7 +10,15 @@ const {
   when,
   tap,
   each,
+  some,
 } = fxjs;
+const CONSTANTS = {
+  UP: 0,
+  RIGHT: 1,
+  DOWN: 2,
+  LEFT: 3,
+  RESTART: 4,
+};
 
 class Grid {
   constructor(size) {
@@ -77,7 +85,6 @@ class Grid {
 
   getAvailablePosition() {
     const positions = this.getAvailablePositions();
-
     function random(list) {
       return list[Math.floor(Math.random() * list.length)];
     }
@@ -93,15 +100,15 @@ class Grid {
     return !!this.getAvailablePositions().length;
   }
 
-  availableCell(cell) {
-    return !this.cellOccupied(cell);
+  isCellEmpty(cell) {
+    return !this.isCellOccupied(cell);
   }
 
-  cellOccupied(cell) {
-    return !!this.getCell(cell);
+  isCellOccupied(cell) {
+    return !!this.getCellContent(cell);
   }
 
-  getCell(cell) {
+  getCellContent(cell) {
     if (this.withinBounds(cell)) {
       return this.cells[cell.x][cell.y];
     } else {
@@ -147,18 +154,40 @@ class Tile {
 class GameManager {
   constructor(size, InputManager, Actuator) {
     this.size = size; // Size of the grid
-    // this.inputManager = new InputManager();
+    this.inputManager = new InputManager();
     this.actuator = new Actuator();
 
-    this.startTiles = 2;
+    this.startTiles = 1;
 
-    // this.inputManager.on("move", this.move.bind(this));
-    // this.inputManager.on("restart", this.restart.bind(this));
+    this.inputManager.on("move", this.move.bind(this));
+    this.inputManager.on("restart", this.restart.bind(this));
     // this.inputManager.on("keepPlaying", this.keepPlaying.bind(this));
 
     this.setup();
   }
 
+  isPositionEqual(first, second) {
+    return first.x === second.x && first.y === second.y;
+  }
+
+  // Restart the game
+  restart() {
+    // this.actuator.continueGame(); // Clear the game won/lost message
+    this.setup();
+  }
+
+  // Keep playing after winning (allows going over 2048)
+  keepPlaying() {
+    this.keepPlaying = true;
+    // this.actuator.continueGame(); // Clear the game won/lost message
+  }
+
+  // Return true if the game is lost, or has won and the user hasn't kept playing
+  isGameTerminated() {
+    return this.over || (this.won && !this.keepPlaying);
+  }
+
+  // Set up the game
   setup() {
     this.grid = new Grid(this.size);
     this.score = 0;
@@ -173,10 +202,12 @@ class GameManager {
     this.actuate();
   }
 
+  // Set up the initial tiles to start the game with
   addStartTiles() {
     go(range(this.startTiles), each(this.addRandomTile.bind(this)));
   }
 
+  // Adds a tile in a random position
   addRandomTile() {
     if (this.grid.isExistAvailableCell()) {
       const value = Math.random() < 0.9 ? 2 : 4;
@@ -186,6 +217,7 @@ class GameManager {
     }
   }
 
+  // Sends the updated grid to the actuator
   actuate() {
     this.actuator.actuate(this.grid, {
       score: this.score,
@@ -197,8 +229,167 @@ class GameManager {
     });
   }
 
-  isGameTerminated() {
-    return this.over || (this.won && !this.keepPlaying);
+  // Save all tile positions and remove merger info
+  prepareTiles() {
+    this.grid.eachCell(function (x, y, tile) {
+      if (tile) {
+        tile.mergedFrom = null;
+        tile.savePosition();
+      }
+    });
+  }
+
+  // Move a tile and its representation
+  moveTile(tile, cell) {
+    this.grid.cells[tile.x][tile.y] = null;
+    this.grid.cells[cell.x][cell.y] = tile;
+    tile.updatePosition(cell);
+  }
+
+  movesAvailable() {
+    return this.grid.isExistAvailableCell() || this.isCanMergeWithNeighbor();
+  }
+
+  isCanMergeWithNeighbor() {
+    const self = this;
+    let isCanMerge = false;
+
+    this.grid.eachCell((x, y, cell) => {
+      const tile = this.grid.getCellContent({ x, y });
+
+      if (tile) {
+        const result = go(
+          CONSTANTS,
+          Object.values,
+          filter((value) => value < 4),
+          map(self.getVector),
+          some((vector) => {
+            const cell = { x: i + vector.x, y: j + vector.y };
+            const next = self.grid.getCellContent(cell);
+            return next && next.value === tile.value;
+          })
+        );
+
+        isCanMerge = isCanMerge || result;
+      }
+    });
+
+    return isCanMerge;
+  }
+
+  // Move tiles on the grid in the specified direction
+  move(direction) {
+    const self = this;
+
+    if (this.isGameTerminated()) return; // Don't do anything if the game's over
+
+    const vector = this.getVector(direction);
+    const traversals = this.buildTraversals(vector);
+    let moved = false;
+
+    // Save the current tile positions and remove merger information
+    this.prepareTiles();
+
+    // Traverse the grid in the right direction and move tiles
+    traversals.x.forEach(function (x) {
+      traversals.y.forEach(function (y) {
+        const cell = { x: x, y: y };
+        const tile = self.grid.getCellContent(cell);
+
+        if (tile) {
+          const farthestPosition = self.getFarthestPosition(cell, vector);
+          const next = self.grid.getCellContent(farthestPosition.nextCell);
+          console.log(
+            "move",
+            cell,
+            tile,
+            direction,
+            vector,
+            farthestPosition,
+            next
+          );
+
+          const isCanMerge =
+            next && next.value === tile.value && !next.mergedFrom;
+          if (isCanMerge) {
+            const merged = new Tile(farthestPosition.nextCell, tile.value * 2);
+            merged.mergedFrom = [tile, next];
+
+            self.grid.insertTile(merged);
+            self.grid.removeTile(tile);
+
+            // Converge the two tiles' positions
+            tile.updatePosition(farthestPosition.nextCell);
+
+            // Update the score
+            self.score += merged.value;
+
+            // The mighty 2048 tile
+            if (merged.value === 2048) self.won = true;
+          } else {
+            self.moveTile(tile, farthestPosition.farthest);
+          }
+
+          // tile's position can be updated by updatePosition()
+          if (!self.isPositionEqual(cell, tile)) {
+            moved = true;
+          }
+        }
+      });
+    });
+
+    if (moved) {
+      this.addRandomTile();
+
+      if (!this.movesAvailable()) {
+        this.over = true; // Game over!
+      }
+
+      this.actuate();
+    }
+  }
+
+  // Get the vector representing the chosen direction
+  getVector(direction) {
+    const vectorMap = {
+      [CONSTANTS.UP]: { x: 0, y: -1 },
+      [CONSTANTS.RIGHT]: { x: 1, y: 0 },
+      [CONSTANTS.DOWN]: { x: 0, y: 1 },
+      [CONSTANTS.LEFT]: { x: -1, y: 0 },
+    };
+
+    return vectorMap[direction];
+  }
+
+  // Build a list of positions to traverse in the right order
+  buildTraversals(vector) {
+    const traversals = { x: [], y: [] };
+
+    for (let pos = 0; pos < this.size; pos++) {
+      traversals.x.push(pos);
+      traversals.y.push(pos);
+    }
+
+    // Always traverse from the farthest cell in the chosen direction
+    if (vector.x === 1) traversals.x = traversals.x.reverse();
+    if (vector.y === 1) traversals.y = traversals.y.reverse();
+
+    return traversals;
+  }
+
+  getFarthestPosition(cell, vector) {
+    let previous;
+
+    // Progress towards the vector direction until an obstacle is found
+    do {
+      previous = cell;
+      cell = { x: previous.x + vector.x, y: previous.y + vector.y };
+    } while (this.grid.withinBounds(cell) && this.grid.isCellEmpty(cell));
+
+    return {
+      farthest: previous,
+      nextCell: cell, // Used to check if a merge is required
+    };
   }
 }
 
@@ -207,7 +398,7 @@ class HTMLActuator {
     this.tileContainer = document.querySelector(".tile-container");
     this.scoreContainer = document.querySelector(".score-container");
     this.bestContainer = document.querySelector(".best-container");
-    this.messageContainer = document.querySelector(".game-message");
+    // this.messageContainer = document.querySelector(".game-message");
 
     this.score = 0;
   }
@@ -233,11 +424,11 @@ class HTMLActuator {
 
   addTile(tile) {
     const self = this;
-
     const wrapper = document.createElement("div");
     const inner = document.createElement("div");
     const position = tile.previousPosition || { x: tile.x, y: tile.y };
     const positionClass = this.positionClass(position);
+    console.log("addTile", tile, positionClass);
 
     // We can't use classlist because it somehow glitches when replacing classes
     const classes = ["tile", `tile-${tile.value}`, positionClass];
@@ -319,5 +510,162 @@ class HTMLActuator {
   }
 }
 
-const gameManager = new GameManager(4, null, HTMLActuator);
-console.log(gameManager);
+class InputManager {
+  constructor() {
+    this.events = {};
+
+    if (window.navigator.msPointerEnabled) {
+      //Internet Explorer 10 style
+      this.eventTouchstart = "MSPointerDown";
+      this.eventTouchmove = "MSPointerMove";
+      this.eventTouchend = "MSPointerUp";
+    } else {
+      this.eventTouchstart = "touchstart";
+      this.eventTouchmove = "touchmove";
+      this.eventTouchend = "touchend";
+    }
+
+    this.listen();
+  }
+
+  targetIsInput(event) {
+    return event.target.tagName.toLowerCase() === "input";
+  }
+
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+
+  emit(event, data) {
+    const callbacks = this.events[event];
+    console.log("input manager emit", this.events, event, data);
+    if (callbacks) {
+      callbacks.forEach(function (callback) {
+        callback(data);
+      });
+    }
+  }
+
+  restart(event) {
+    event.preventDefault();
+    this.emit("restart");
+  }
+
+  listen() {
+    const self = this;
+
+    const keyMap = {
+      ArrowUp: CONSTANTS.UP,
+      ArrowRight: CONSTANTS.RIGHT,
+      ArrowDown: CONSTANTS.DOWN,
+      ArrowLeft: CONSTANTS.LEFT,
+      r: CONSTANTS.RESTART,
+    };
+
+    // Respond to direction keys
+    document.addEventListener("keydown", function (event) {
+      const modifiers =
+        event.altKey || event.ctrlKey || event.metaKey || event.shiftKey;
+      const key = keyMap[event.key];
+
+      // Ignore the event if it's happening in a text field
+      if (self.targetIsInput(event)) return;
+
+      if (!modifiers && key !== undefined) {
+        event.preventDefault();
+        self.emit("move", key);
+      }
+
+      // R key restarts the game
+      if (!modifiers && key === CONSTANTS.RESTART) {
+        self.restart.call(self, event);
+      }
+    });
+
+    // Respond to button presses
+    // this.bindButtonPress(".retry-button", this.restart);
+    // this.bindButtonPress(".restart-button", this.restart);
+    // this.bindButtonPress(".keep-playing-button", this.keepPlaying);
+
+    // Respond to swipe events
+    let touchStartClientX, touchStartClientY;
+    const gameContainer = document.getElementsByClassName("game-container")[0];
+
+    gameContainer.addEventListener(
+      this.eventTouchstart,
+      function (event) {
+        if (
+          (!window.navigator.msPointerEnabled && event.touches.length > 1) ||
+          event.targetTouches.length > 1 ||
+          self.targetIsInput(event)
+        ) {
+          return; // Ignore if touching with more than 1 finger or touching input
+        }
+
+        if (window.navigator.msPointerEnabled) {
+          touchStartClientX = event.pageX;
+          touchStartClientY = event.pageY;
+        } else {
+          touchStartClientX = event.touches[0].clientX;
+          touchStartClientY = event.touches[0].clientY;
+        }
+
+        event.preventDefault();
+      },
+      { passive: true }
+    );
+
+    gameContainer.addEventListener(
+      this.eventTouchmove,
+      function (event) {
+        event.preventDefault();
+      },
+      { passive: true }
+    );
+
+    gameContainer.addEventListener(this.eventTouchend, function (event) {
+      if (
+        (!window.navigator.msPointerEnabled && event.touches.length > 0) ||
+        event.targetTouches.length > 0 ||
+        self.targetIsInput(event)
+      ) {
+        return; // Ignore if still touching with one or more fingers or input
+      }
+
+      let touchEndClientX, touchEndClientY;
+
+      if (window.navigator.msPointerEnabled) {
+        touchEndClientX = event.pageX;
+        touchEndClientY = event.pageY;
+      } else {
+        touchEndClientX = event.changedTouches[0].clientX;
+        touchEndClientY = event.changedTouches[0].clientY;
+      }
+
+      const threshold = 10;
+      const dx = touchEndClientX - touchStartClientX;
+      const absDx = Math.abs(dx);
+      const dy = touchEndClientY - touchStartClientY;
+      const absDy = Math.abs(dy);
+
+      if (Math.max(absDx, absDy) > threshold) {
+        // (right : left) : (down : up)
+        self.emit(
+          "move",
+          absDx > absDy
+            ? dx > 0
+              ? CONSTANTS.RIGHT
+              : CONSTANTS.LEFT
+            : dy > 0
+            ? CONSTANTS.DOWN
+            : CONSTANTS.UP
+        );
+      }
+    });
+  }
+}
+
+const gameManager = new GameManager(4, InputManager, HTMLActuator);

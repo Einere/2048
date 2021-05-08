@@ -1,3 +1,4 @@
+/*
 export function KeyboardInputManager() {
   this.events = {};
 
@@ -163,3 +164,4 @@ KeyboardInputManager.prototype.bindButtonPress = function (selector, fn) {
 KeyboardInputManager.prototype.targetIsInput = function (event) {
   return event.target.tagName.toLowerCase() === "input";
 };
+*/
