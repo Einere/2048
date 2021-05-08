@@ -157,7 +157,7 @@ class GameManager {
   }
 
   isPositionEqual(first, second) {
-    return first.x === second.x && first.y === second.y;
+    return first.row === second.row && first.column === second.column;
   }
 
   // Restart the game
@@ -221,7 +221,7 @@ class GameManager {
 
   // Save all tile positions and remove merger info
   prepareTiles() {
-    this.grid.eachCell(function (x, y, tile) {
+    this.grid.eachCell(function (row, column, tile) {
       if (tile) {
         tile.mergedFrom = null;
         tile.savePosition();
@@ -231,8 +231,8 @@ class GameManager {
 
   // Move a tile and its representation
   moveTile(tile, cell) {
-    this.grid.cells[tile.x][tile.y] = null;
-    this.grid.cells[cell.x][cell.y] = tile;
+    this.grid.cells[tile.row][tile.column] = null;
+    this.grid.cells[cell.row][cell.column] = tile;
     tile.updatePosition(cell);
   }
 
@@ -244,8 +244,8 @@ class GameManager {
     const self = this;
     let isCanMerge = false;
 
-    this.grid.eachCell((x, y, cell) => {
-      const tile = this.grid.getCellContent({ x, y });
+    this.grid.eachCell((row, column, cell) => {
+      const tile = this.grid.getCellContent({ row, column });
 
       if (tile) {
         const result = go(
@@ -254,7 +254,7 @@ class GameManager {
           filter((value) => value < 4),
           map(self.getVector),
           some((vector) => {
-            const cell = { x: i + vector.x, y: j + vector.y };
+            const cell = { row: row + vector.y, column: column + vector.x };
             const next = self.grid.getCellContent(cell);
             return next && next.value === tile.value;
           })
@@ -281,26 +281,17 @@ class GameManager {
     this.prepareTiles();
 
     // Traverse the grid in the right direction and move tiles
-    traversals.x.forEach(function (x) {
-      traversals.y.forEach(function (y) {
-        const cell = { x: x, y: y };
+    traversals.row.forEach(function (row) {
+      traversals.column.forEach(function (column) {
+        const cell = { row, column };
         const tile = self.grid.getCellContent(cell);
 
         if (tile) {
           const farthestPosition = self.getFarthestPosition(cell, vector);
           const next = self.grid.getCellContent(farthestPosition.nextCell);
-          console.log(
-            "move",
-            cell,
-            tile,
-            direction,
-            vector,
-            farthestPosition,
-            next
-          );
-
           const isCanMerge =
             next && next.value === tile.value && !next.mergedFrom;
+
           if (isCanMerge) {
             const merged = new Tile(farthestPosition.nextCell, tile.value * 2);
             merged.mergedFrom = [tile, next];
@@ -341,6 +332,8 @@ class GameManager {
 
   // Get the vector representing the chosen direction
   getVector(direction) {
+    // don't confuse vector.x , vector.y.
+    // vector.x is delta about column axis, vector.y is delta about row axis
     const vectorMap = {
       [CONSTANTS.UP]: { x: 0, y: -1 },
       [CONSTANTS.RIGHT]: { x: 1, y: 0 },
@@ -353,16 +346,16 @@ class GameManager {
 
   // Build a list of positions to traverse in the right order
   buildTraversals(vector) {
-    const traversals = { x: [], y: [] };
+    const traversals = { row: [], column: [] };
 
     for (let pos = 0; pos < this.size; pos++) {
-      traversals.x.push(pos);
-      traversals.y.push(pos);
+      traversals.row.push(pos);
+      traversals.column.push(pos);
     }
 
     // Always traverse from the farthest cell in the chosen direction
-    if (vector.x === 1) traversals.x = traversals.x.reverse();
-    if (vector.y === 1) traversals.y = traversals.y.reverse();
+    if (vector.x === 1) traversals.column = traversals.column.reverse();
+    if (vector.y === 1) traversals.row = traversals.row.reverse();
 
     return traversals;
   }
@@ -373,7 +366,10 @@ class GameManager {
     // Progress towards the vector direction until an obstacle is found
     do {
       previous = cell;
-      cell = { x: previous.x + vector.x, y: previous.y + vector.y };
+      cell = {
+        row: previous.row + vector.y,
+        column: previous.column + vector.x,
+      };
     } while (this.grid.withinBounds(cell) && this.grid.isCellEmpty(cell));
 
     return {
