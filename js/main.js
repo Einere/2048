@@ -12,6 +12,13 @@ function random(list) {
   return list[Math.floor(Math.random() * list.length)];
 }
 
+function getPosition(cellOrTile) {
+  return {
+    row: cellOrTile.row,
+    column: cellOrTile.column,
+  };
+}
+
 class Grid {
   constructor(size) {
     this.size = size;
@@ -28,7 +35,7 @@ class Grid {
 
         go(
           range(this.size),
-          forEach((column) => {
+          forEach((_) => {
             cells[row].push(null);
           })
         );
@@ -131,7 +138,7 @@ class Tile {
   }
 
   savePosition() {
-    this.previousPosition = { row: this.row, column: this.column };
+    this.previousPosition = getPosition(this);
   }
 
   updatePosition(position) {
@@ -243,7 +250,7 @@ class GameManager {
     const self = this;
     let isCanMerge = false;
 
-    this.grid.eachCell((row, column, cell) => {
+    this.grid.eachCell((row, column, _) => {
       const tile = this.grid.getCellContent({ row, column });
 
       if (tile) {
@@ -424,7 +431,8 @@ class HTMLActuator {
     // render previous, and make it to move current position
     if (tile.previousPosition) {
       window.requestAnimationFrame(function () {
-        classes[2] = self.positionClass({ row: tile.row, column: tile.column });
+        const position = getPosition(tile);
+        classes[2] = self.positionClass(position);
         self.applyClasses(wrapper, classes);
       });
     } else if (tile.mergedFrom) {
