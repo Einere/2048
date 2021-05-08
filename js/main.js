@@ -1,17 +1,5 @@
 const fxjs = window._;
-const {
-  go,
-  range,
-  forEach,
-  map,
-  zipWithIndexL,
-  filter,
-  flat,
-  when,
-  tap,
-  each,
-  some,
-} = fxjs;
+const { go, range, forEach, map, filter, flat, when, each, some } = fxjs;
 const CONSTANTS = {
   UP: 0,
   RIGHT: 1,
@@ -19,6 +7,10 @@ const CONSTANTS = {
   LEFT: 3,
   RESTART: 4,
 };
+
+function random(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 class Grid {
   constructor(size) {
@@ -31,13 +23,13 @@ class Grid {
 
     go(
       range(this.size),
-      forEach((i) => {
+      forEach((row) => {
         cells.push([]);
 
         go(
           range(this.size),
-          forEach((j) => {
-            cells[i].push(null);
+          forEach((column) => {
+            cells[row].push(null);
           })
         );
       })
@@ -59,6 +51,7 @@ class Grid {
 
     for (let i = 0; i < this.size; i++) {
       const mappedRow = [];
+
       for (let j = 0; j < this.size; j++) {
         const result = callback(i, j, this.cells[i][j]);
 
@@ -73,11 +66,11 @@ class Grid {
   }
 
   getAvailablePositions() {
-    return this.mapCell((x, y, cell) => {
+    return this.mapCell((row, column, cell) => {
       if (!cell) {
         return {
-          x,
-          y,
+          row,
+          column,
         };
       }
     });
@@ -85,9 +78,6 @@ class Grid {
 
   getAvailablePosition() {
     const positions = this.getAvailablePositions();
-    function random(list) {
-      return list[Math.floor(Math.random() * list.length)];
-    }
 
     return go(
       positions,
